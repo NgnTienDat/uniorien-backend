@@ -5,6 +5,7 @@ import com.ntd.uniorien.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.util.Set;
@@ -37,14 +38,13 @@ public class User {
     @Column(name = "created_at")
     Instant createdAt;
 
-
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'USER'")
-    Role role = Role.USER;
+    @Column(nullable = false, length = 15)
+    @ColumnDefault("USER")
+    Role role;
 
-
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    boolean active = true;
+    @ColumnDefault("true")
+    boolean active;
 
 
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
@@ -54,5 +54,7 @@ public class User {
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
+        role = Role.USER;
+        active = true;
     }
 }

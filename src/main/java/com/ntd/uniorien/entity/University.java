@@ -3,6 +3,7 @@ package com.ntd.uniorien.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,8 +34,8 @@ public class University {
 
     String website;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    boolean active = true;
+    @ColumnDefault("true")
+    boolean active;
 
     String logo;
 
@@ -53,5 +54,6 @@ public class University {
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
+        active = true;
     }
 }
