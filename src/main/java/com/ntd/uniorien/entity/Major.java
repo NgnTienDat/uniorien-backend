@@ -25,6 +25,6 @@ public class Major {
     String majorName;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "major_group_id", nullable = true)
+    @JoinColumn(name = "major_group_id")
     MajorGroup majorGroup;
 }

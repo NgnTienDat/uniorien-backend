@@ -4,35 +4,37 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
-import java.util.Set;
-
 @Entity
-@Table(name = "admission_information")
+@Table(name = "benchmark")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class AdmissionInformation {
+public class Benchmark {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, length = 36)
     String id;
 
-    LocalDate yearOfAdmission;
+    float score;
 
-    String admissionMethod;
+    String note;
 
-    @OneToMany(mappedBy = "admissionInformation",
-            cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY,
-            orphanRemoval = true)
-    Set<Benchmark> benchmarks;
+    String subjectCombinations;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "major_id", nullable = false)
+    Major major;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "university_id", nullable = false)
     University university;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admission_information_id", nullable = false)
+    AdmissionInformation admissionInformation;
+
+
 }

@@ -7,6 +7,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -36,9 +37,18 @@ public class User {
     @Column(name = "created_at")
     Instant createdAt;
 
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'USER'")
     Role role = Role.USER;
 
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     boolean active = true;
+
+
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    Set<Comment> comments;
 
 
     @PrePersist
