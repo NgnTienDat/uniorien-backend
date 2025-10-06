@@ -5,6 +5,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "university")
@@ -31,6 +33,7 @@ public class University {
 
     String website;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     boolean active = true;
 
     String logo;
@@ -41,6 +44,11 @@ public class University {
     @Column(name = "created_at")
     Instant createdAt;
 
+    @OneToMany(mappedBy = "university", cascade = CascadeType.ALL , fetch = FetchType.LAZY, orphanRemoval = true)
+    Set<AdmissionInformation> admissionInformations;
+
+    @OneToMany(mappedBy = "university", cascade = CascadeType.ALL , fetch = FetchType.LAZY, orphanRemoval = true)
+    Set<Comment> comments;
 
     @PrePersist
     protected void onCreate() {
