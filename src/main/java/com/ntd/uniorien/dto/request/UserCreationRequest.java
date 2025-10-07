@@ -11,17 +11,19 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserCreation {
-    @Email
+public class UserCreationRequest {
+
+    @Email(message = "INVALID_EMAIL")
+    @NotBlank(message = "NOT_BLANK")
     String email;
 
-    @NotBlank
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
+    @NotBlank(message = "NOT_BLANK")
+    @Size(min = 6, message = "INVALID_PASSWORD")
     String password;
 
     String avatar;
 
-    @Size(max = 24, message = "Tên tài khoản không được quá 24 ký tự")
-    @NotBlank
+    @Size(max = 24, message = "INVALID_NAME")
+    @NotBlank(message = "NOT_BLANK")
     String fullName;
 }

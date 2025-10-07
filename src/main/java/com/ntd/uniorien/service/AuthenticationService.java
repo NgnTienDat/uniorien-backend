@@ -9,6 +9,7 @@ import com.ntd.uniorien.dto.request.AuthenticationRequest;
 import com.ntd.uniorien.dto.request.IntrospectRequest;
 import com.ntd.uniorien.dto.response.AuthenticationResponse;
 import com.ntd.uniorien.dto.response.IntrospectResponse;
+import com.ntd.uniorien.entity.User;
 import com.ntd.uniorien.enums.ErrorCode;
 import com.ntd.uniorien.exception.AppException;
 import com.ntd.uniorien.repository.UserRepository;
@@ -23,11 +24,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.StringJoiner;
 
 @Service
 @Transactional
@@ -42,7 +45,7 @@ public class AuthenticationService {
     protected String SIGNER_KEY;
 
     public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest ) {
-        var user = userRepository.findUserByEmail(authenticationRequest.getEmail())
+        User user = userRepository.findUserByEmail(authenticationRequest.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
 
         if (!user.isActive()) throw new AppException(ErrorCode.ACCOUNT_LOCKED);
@@ -52,7 +55,7 @@ public class AuthenticationService {
 
         if (!matches) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
-        String token = generateToken(authenticationRequest.getEmail());
+        String token = generateToken(user);
 
         return AuthenticationResponse.builder()
                 .authenticated(true)
@@ -60,14 +63,15 @@ public class AuthenticationService {
                 .build();
     }
 
-    private String generateToken(String email) {
+    private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
-                .subject(email)
+                .subject(user.getEmail())
                 .issuer("uniorien.vn")
                 .issueTime(new Date())
                 .expirationTime(new Date(Instant.now().plus(30, ChronoUnit.DAYS).toEpochMilli()))
+                .claim("scope", buildScope(user))
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -94,6 +98,12 @@ public class AuthenticationService {
                .build();
     }
 
-
+    private String buildScope(User user) {
+        StringJoiner stringJoiner = new StringJoiner(" ");
+        if (!CollectionUtils.isEmpty(user.getRoles())) {
+            user.getRoles().forEach(role -> stringJoiner.add("ROLE_" + role.getRoleName()));
+        }
+        return stringJoiner.toString();
+    }
 
 }

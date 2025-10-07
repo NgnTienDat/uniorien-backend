@@ -1,6 +1,6 @@
-package com.ntd.uniorien.controller.user;
+package com.ntd.uniorien.controller;
 
-import com.ntd.uniorien.dto.request.UserCreation;
+import com.ntd.uniorien.dto.request.UserCreationRequest;
 import com.ntd.uniorien.dto.response.ApiResponse;
 import com.ntd.uniorien.dto.response.UserResponse;
 import com.ntd.uniorien.service.UserService;
@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,13 +29,14 @@ public class UserController {
 
 
     @GetMapping("/")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(ResponseUtils.ok(users));
     }
 
     @PostMapping("/new-user")
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid UserCreation userRequest) {
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid UserCreationRequest userRequest) {
         userService.createUser(userRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtils.created(null));

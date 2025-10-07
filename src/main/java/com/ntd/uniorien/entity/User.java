@@ -1,7 +1,6 @@
 package com.ntd.uniorien.entity;
 
 
-import com.ntd.uniorien.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -38,10 +37,8 @@ public class User {
     @Column(name = "created_at")
     Instant createdAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 15)
-    @ColumnDefault("USER")
-    Role role;
+    @ManyToMany
+    Set<Role> roles;
 
     @ColumnDefault("true")
     boolean active;
@@ -54,7 +51,6 @@ public class User {
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
-        role = Role.USER;
         active = true;
     }
 }
