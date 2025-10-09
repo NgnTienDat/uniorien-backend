@@ -28,7 +28,6 @@ public class University {
     @Column(name = "university_name", nullable = false)
     String universityName;
 
-    @Column(nullable = false)
     String location;
 
     String website;

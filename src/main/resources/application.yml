@@ -19,8 +19,12 @@ spring:
 
 auth:
   signer-key: ${SIGNER_KEY}
+  valid-duration: 29
+  refreshable-duration: 30
 
 app:
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
+  crawl:
+    url: "https://diemthi.tuyensinh247.com/diem-chuan.html"
