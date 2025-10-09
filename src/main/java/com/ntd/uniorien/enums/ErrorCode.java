@@ -26,6 +26,9 @@ public enum ErrorCode {
     INVALID_PASSWORD(2004, "Invalid password", HttpStatus.BAD_REQUEST),
     INVALID_NAME(2005, "Invalid name account", HttpStatus.BAD_REQUEST),
 
+    // Connect: 3XXX
+    CRAWL_URL_CONNECTION_ERROR(3001, "Crawl URL Connection Error", HttpStatus.INTERNAL_SERVER_ERROR),
+
 
     ;
 
