@@ -14,4 +14,5 @@ public class UniversityResponse {
     String id;
     String universityCode;
     String universityName;
+    String website;
 }
