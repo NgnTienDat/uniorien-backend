@@ -35,4 +35,10 @@ public class AdmissionInformation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "university_id", nullable = false)
     University university;
+
+
+    @Override
+    public String toString() {
+        return String.format(this.admissionMethod + "-" + this.university.getUniversityCode() + "-" + this.yearOfAdmission);
+    }
 }

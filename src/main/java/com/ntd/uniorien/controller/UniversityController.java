@@ -1,5 +1,6 @@
 package com.ntd.uniorien.controller;
 
+import com.ntd.uniorien.service.BenchmarkService;
 import com.ntd.uniorien.service.CrawlService;
 import com.ntd.uniorien.utils.raw.SchoolInfo;
 import com.ntd.uniorien.dto.response.ApiResponse;
@@ -11,8 +12,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,12 +27,27 @@ import java.util.List;
 public class UniversityController {
 
     UniversityService universityService;
-    CrawlService crawlService;
+    BenchmarkService benchmarkService;
+
+    @DeleteMapping("/delete-all")
+    public ResponseEntity<ApiResponse<?>> deleteUniversities() {
+        universityService.deleteUniversities();
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ResponseUtils.ok(null));
+    }
 
 
     @PostMapping("/save-list")
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody List<SchoolInfo> schoolInfoList) {
+    public ResponseEntity<ApiResponse<UserResponse>> createUniversities(@RequestBody List<SchoolInfo> schoolInfoList) {
         universityService.saveUniversities(schoolInfoList);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ResponseUtils.created(null));
+    }
+
+
+    @PostMapping(value = "/save-benchmarks", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<String>> uploadBenchmarks(@RequestParam("file") MultipartFile file) {
+        benchmarkService.handleSaveBenchmarkFromFileCSV(file);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtils.created(null));
     }
@@ -40,11 +58,12 @@ public class UniversityController {
         return ResponseEntity.ok(ResponseUtils.ok(universityService.getAllUniversities()));
     }
 
+    @GetMapping("/benchmarks/{universityCode}")
+    public ResponseEntity<ApiResponse<?>> getBenchmarksByUniversityCode(
+            @PathVariable(value = "universityCode") String universityCode) {
 
-    @GetMapping("/crawl/uni-list")
-    public ResponseEntity<ApiResponse<List<SchoolInfo>>> crawlUniversities() {
-        List<SchoolInfo> schools = crawlService.crawlUniversities();
-        return ResponseEntity.ok(ResponseUtils.ok(schools));
+
+        return ResponseEntity.ok(ResponseUtils.ok(universityService.getAdmissionsByUniversityCode(universityCode)));
     }
 
 }

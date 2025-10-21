@@ -2,7 +2,9 @@ package com.ntd.uniorien.controller;
 
 import com.ntd.uniorien.dto.response.ApiResponse;
 import com.ntd.uniorien.service.CrawlService;
+import com.ntd.uniorien.service.UniversityService;
 import com.ntd.uniorien.utils.helper.ResponseUtils;
+import com.ntd.uniorien.utils.raw.MajorGroupRawData;
 import com.ntd.uniorien.utils.raw.SchoolInfo;
 import com.ntd.uniorien.utils.raw.UniversityRawData;
 import lombok.AccessLevel;
@@ -24,10 +26,12 @@ import java.util.List;
 public class CrawlController {
 
     CrawlService crawlService;
+    UniversityService universityService;
 
     @GetMapping("/uni-list")
     public ResponseEntity<ApiResponse<List<SchoolInfo>>> crawlUniversities() {
         List<SchoolInfo> schools = crawlService.crawlUniversities();
+        universityService.saveUniversities(schools);
         return ResponseEntity.ok(ResponseUtils.ok(schools));
     }
 
@@ -35,5 +39,12 @@ public class CrawlController {
     public ResponseEntity<ApiResponse<List<UniversityRawData>>> crawlBenchmarks() {
         List<UniversityRawData> universityRawData = crawlService.crawlBenchmarks();
         return ResponseEntity.ok(ResponseUtils.ok(universityRawData));
+    }
+
+
+    @GetMapping("/major-groups")
+    public ResponseEntity<ApiResponse<List<MajorGroupRawData>>> crawlMajorGroup() {
+        List<MajorGroupRawData> majorGroupRawData = crawlService.crawlMajorGroups();
+        return ResponseEntity.ok(ResponseUtils.ok(majorGroupRawData));
     }
 }

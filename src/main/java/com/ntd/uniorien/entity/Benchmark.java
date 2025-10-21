@@ -25,7 +25,7 @@ public class Benchmark {
     String subjectCombinations;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "major_id", nullable = false)
+    @JoinColumn(name = "major_id")
     Major major;
 
     @ManyToOne(fetch = FetchType.LAZY)
