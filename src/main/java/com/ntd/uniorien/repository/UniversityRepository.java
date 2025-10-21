@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UniversityRepository extends JpaRepository<University, String> {
@@ -26,7 +27,7 @@ public interface UniversityRepository extends JpaRepository<University, String> 
             "FROM University u")
     List<UniversityResponse> findAllCodeAndName(Pageable pageable);
 
-
+    Optional<University> findByUniversityCode(String universityCode);
 
 
 }

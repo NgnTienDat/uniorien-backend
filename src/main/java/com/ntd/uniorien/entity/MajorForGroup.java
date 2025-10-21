@@ -5,26 +5,22 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "major")
+@Table(name = "major_for_group")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class Major {
+public class MajorForGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, length = 36)
     String id;
 
-    @Column(name = "major_code")
-    String majorCode;
-
     @Column(name = "major_name", nullable = false)
     String majorName;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "major_group_id")
-//    MajorGroup majorGroup;
+    @Column(name = "major_group_name", nullable = false)
+    String majorGroupName;
 }

@@ -18,6 +18,8 @@ public enum ErrorCode {
     UNAUTHORIZED(1004, "You dont have permission", HttpStatus.FORBIDDEN),
     PASSWORD_EXISTED(1005, "Password existed", HttpStatus.BAD_REQUEST),
     ACCOUNT_LOCKED(1006, "Your account is locked", HttpStatus.BAD_REQUEST),
+    UNIVERSITY_NOT_FOUND(1007, "University not found", HttpStatus.NOT_FOUND),
+    MAJOR_GROUP_EMPTY(1008, "Major groups data is empty", HttpStatus.NOT_FOUND),
 
     // Validation: 2XXX
     INVALID_MESSAGE_KEY(2001, "Invalid Message Key", HttpStatus.BAD_REQUEST),

@@ -28,7 +28,7 @@ public class SecurityConfig {
     };
 
     private final String[] PUBLIC_ENDPOINTS_GET = {
-            "/api/posts"
+            "/api/v1/uni/", "/api/v1/uni/benchmarks/**"
     };
 
     @Autowired

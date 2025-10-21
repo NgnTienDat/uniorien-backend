@@ -17,4 +17,5 @@ public interface MajorRepository extends JpaRepository<Major, String> {
 
 
 
+
 }

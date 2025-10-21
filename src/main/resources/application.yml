@@ -11,7 +11,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -27,4 +27,5 @@ app:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
   crawl:
-    url: "https://diemthi.tuyensinh247.com/diem-chuan.html"
+    url-diem-chuan: "https://diemthi.tuyensinh247.com/diem-chuan.html"
+    url-nganh-dao-tao: "https://diemthi.tuyensinh247.com/nganh-dao-tao.html"
