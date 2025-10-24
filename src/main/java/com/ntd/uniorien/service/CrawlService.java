@@ -17,6 +17,8 @@ import org.jsoup.select.Elements;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,18 +54,25 @@ public class CrawlService {
     protected String CRAWL_URL;
 
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UniversityRawData> crawlBenchmarks() {
+    public List<UniversityRawData> crawlBenchmarks(String year) {
         int cnt = 0;
         List<UniversityRawData> universityRawDataList = new ArrayList<>();
-//        List<UniversityResponse> universityList = universityRepository.findAllCodeAndName();
-        List<UniversityResponse> universityList = universityRepository.findAllCodeAndName(PageRequest.of(0, 5));
+        List<UniversityResponse> universityList = universityRepository
+                .findAllCodeAndName(PageRequest.of(0, 2));
 
         WebDriver driver = getWebDriver();
 
         try {
+            int targetYear = Integer.parseInt(year);
+
             for (var university : universityList) {
+                System.out.println("\n-------------------------------------------");
                 System.out.println("STT: " + ++cnt);
-                System.out.println("Crawling data for: " + university.getUniversityName() + " (" + university.getUniversityCode() + ")");
+                System.out.println("Crawling data for: "
+                        + university.getUniversityName()
+                        + " (" + university.getUniversityCode() + ")");
+                System.out.println("-------------------------------------------");
+
                 try {
                     UniversityRawData universityRawData = new UniversityRawData();
                     universityRawData.setUniversityCode(university.getUniversityCode());
@@ -73,78 +82,190 @@ public class CrawlService {
                     long start = System.currentTimeMillis();
                     driver.get(university.getWebsite());
 
-                    // --- START: APPLIED ROBUST WAITING LOGIC ---
-                    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+                    // WebDriverWait chính chờ tải trang và tiêu đề (20 giây)
+                    WebDriverWait mainWait = new WebDriverWait(driver, Duration.ofSeconds(20));
 
-                    // 1. Wait for the table container to be visible
-                    wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".ant-table-content table")));
+                    // WebDriverWait phụ chờ kiểm tra data (5 giây)
+                    WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(5));
 
-                    // 2. Wait for at least one data row to appear in the table body
-                    wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.cssSelector(".ant-table-content table tbody tr"), 0));
 
-                    // 3. CRITICAL: Wait for the table headers to be fully loaded (at least 6 columns)
-                    // This prevents errors when trying to access data from columns that haven't rendered yet.
-                    wait.until(driverInstance -> {
+                    // Chờ trang tải ít nhất một khối phương thức
+                    mainWait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.cutoff-table")));
+
+                    // GIAI ĐOẠN 1: TƯƠNG TÁC (SELENIUM) - Lặp qua từng phương thức để click
+
+                    // Lấy tất cả các block phương thức. dùng findElements vì sẽ lặp bằng index.
+                    List<WebElement> methodBlocks = driver.findElements(By.cssSelector("div.cutoff-table"));
+                    System.out.println("Found " + methodBlocks.size() + " admission method blocks on page.");
+
+                    for (int i = 0; i < methodBlocks.size(); i++) {
+
+                        WebElement currentBlock;
                         try {
-                            WebElement tableElement = driverInstance.findElement(By.cssSelector(".ant-table-content table"));
-                            Elements headers = Jsoup.parse(tableElement.getAttribute("outerHTML")).select("thead tr th");
-                            // The table is considered "fully loaded" when all columns are present.
-                            if (headers.size() >= 6) {
-                                System.out.println("✓ Table fully loaded with " + headers.size() + " columns.");
-                                return true;
-                            }
-                            return false;
-                        } catch (Exception e) {
-                            return false; // Continue waiting if element not found or other parsing error
+                            currentBlock = driver.findElements(By.cssSelector("div.cutoff-table")).get(i);
+                        } catch (IndexOutOfBoundsException e) {
+                            System.err.println("WARNING: DOM structure changed, stopping block processing.");
+                            break;
                         }
-                    });
 
-                    // 4. Optional small delay for stability after dynamic content has loaded
-                    Thread.sleep(500);
-                    // --- END: APPLIED ROBUST WAITING LOGIC ---
+                        // 1. Lấy thông tin năm hiện tại của block
+                        String blockTitle;
+                        try {
+                            WebElement titleElement = currentBlock.findElement(By.cssSelector("h3.table__title strong"));
+                            blockTitle = titleElement.getText();
+                        } catch (NoSuchElementException e) {
+                            System.err.println("WARNING: Block " + (i + 1) + " has no title, skipping click logic.");
+                            continue;
+                        }
+
+                        Matcher initialYearMatcher = Pattern.compile("(20\\d{2})").matcher(blockTitle);
+                        int currentTopYear = 2025;
+                        if (initialYearMatcher.find()) {
+                            currentTopYear = Integer.parseInt(initialYearMatcher.group(1));
+                        }
+
+                        System.out.println("Processing block " + (i + 1) + " (" + blockTitle + ")");
+
+
+                        // 2. Logic click lùi thời gian
+                        if (targetYear < currentTopYear) {
+                            int yearToClick = currentTopYear - 1;
+
+                            while (yearToClick >= targetYear) {
+                                System.out.println(" -> Finding 'Xem thêm' link for year: " + yearToClick);
+
+                                String linkXPath = String.format(".//div[@class='more-link']/a[contains(text(), 'năm %s')]", yearToClick);
+
+                                WebElement yearLink;
+                                try {
+                                    // chờ link click được
+                                    yearLink = mainWait.until(ExpectedConditions.elementToBeClickable(
+                                            By.xpath(String.format("(//div[@class='cutoff-table'])[%d]%s", i + 1, linkXPath.substring(1)))
+                                    ));
+                                } catch (TimeoutException e) {
+                                    System.out.println(" -> WARNING: Link for year " + yearToClick + " not found in this block. Stopping year navigation for this block.");
+                                    break;
+                                }
+
+                                System.out.println(" -> ✓ Found. Clicking for year: " + yearToClick);
+
+                                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", yearLink);
+                                Thread.sleep(500); // Chờ scroll
+                                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", yearLink);
+
+                                // Chờ cho dữ liệu MỚI (năm yearToClick) xuất hiện trong DOM
+                                String newTitleXPath = String.format("(//div[@class='cutoff-table'])[%d]//h3[contains(., 'năm %s')]", i + 1, yearToClick);
+                                try {
+                                    // Wait 1: Chờ TIÊU ĐỀ
+                                    mainWait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(newTitleXPath)));
+
+                                    // Wait 2: Chờ DỮ LIỆU (ROWS) BÊN TRONG KHỐI ĐÓ
+                                    String newTableDataXPath = String.format(
+                                            "(//div[@class='cutoff-table'])[%d][.//h3[contains(., 'năm %s')]]//tbody/tr",
+                                            i + 1, yearToClick
+                                    );
+                                    // Giảm thời gian chờ data xuống 5s. Nếu timeout, Jsoup kiểm tra sau.
+                                    shortWait.until(ExpectedConditions.numberOfElementsToBeMoreThan(By.xpath(newTableDataXPath), 0));
+                                    System.out.println(" -> ✓ Content (rows) for year " + yearToClick + " successfully loaded.");
+
+                                } catch (TimeoutException e) {
+                                    // Bắt TimeoutException ở đây và bỏ qua mà không in ra lỗi lớn.
+                                    System.out.println(" -> NOTE: Data for year " + yearToClick + " did not load within 5s. Assuming no data/slow load and continuing.");
+                                }
+
+                                Thread.sleep(500);
+                                yearToClick--;
+                            }
+                        } else {
+                            System.out.println(" -> Target year " + year + " is >= current top year " + currentTopYear + ". No clicks needed for this block.");
+                        }
+                    }
+
+                    Thread.sleep(1000);
+
+                    // GIAI ĐOẠN 2: TRÍCH XUẤT (JSOUP)
 
                     String html = driver.getPageSource();
                     Document doc = Jsoup.parse(html);
 
                     Elements cutoffBlocks = doc.select("div.cutoff-table");
-                    if (cutoffBlocks.isEmpty()) {
-                        System.out.println("No 'cutoff-table' blocks found for this university.");
-                    }
 
                     for (Element block : cutoffBlocks) {
-                        Element titleElement = block.selectFirst("h3.table__title strong");
-                        String methodName = (titleElement != null) ? titleElement.text().trim() : "Unknown Method";
 
-                        String yearOfAdmission = null;
-                        Matcher matcher = Pattern.compile("(20\\d{2})").matcher(methodName);
-                        if (matcher.find()) {
-                            yearOfAdmission = matcher.group(1);
-                        }
+                        Elements titleElements = block.select("h3.table__title");
 
-                        AdmissionInfoRawData admissionInfoRawData = new AdmissionInfoRawData();
-                        admissionInfoRawData.setAdmissionMethod(methodName);
-                        admissionInfoRawData.setYear(yearOfAdmission);
-                        Element table = block.selectFirst("table");
-                        if (table != null) {
-                            Elements rows = table.select("tbody tr"); // Select only body rows
+                        for (Element titleElement : titleElements) {
+                            String methodName = (titleElement.text() != null) ? titleElement.text().trim() : "Unknown Method";
 
-                            for (Element row : rows) {
-                                Elements cols = row.select("td");
-                                // Safety check to avoid IndexOutOfBoundsException on malformed rows
-                                if (cols.size() >= 5) {
-                                    BenchmarkRawData benchmarkRawData = BenchmarkRawData.builder()
-                                            .majorCode(cols.get(1).text().trim())
-                                            .majorName(cols.get(2).text().trim())
-                                            .subjectCombinations(cols.get(3).text().trim())
-                                            .score(cols.get(4).text().trim())
-                                            .notes(cols.get(5).text().trim())
-                                            .build();
-                                    admissionInfoRawData.getBenchmarks().add(benchmarkRawData);
+                            String yearOfAdmission = null;
+                            Matcher matcher = Pattern.compile("(20\\d{2})").matcher(methodName);
+                            if (matcher.find()) {
+                                yearOfAdmission = matcher.group(1);
+                            }
+
+                            if (yearOfAdmission != null && !yearOfAdmission.equals(year)) {
+                                continue;
+                            }
+
+                            System.out.println("   [PARSE] Processing data block: " + methodName);
+
+                            AdmissionInfoRawData admissionInfoRawData = new AdmissionInfoRawData();
+                            admissionInfoRawData.setAdmissionMethod(methodName);
+                            admissionInfoRawData.setYear(yearOfAdmission);
+
+                            Element tableWrapper = titleElement.nextElementSibling();
+                            Element table = null;
+
+                            if (tableWrapper != null && tableWrapper.is("div")) {
+                                table = tableWrapper.selectFirst("table");
+                            } else {
+                                Element strongElement = titleElement.selectFirst("strong");
+                                if (strongElement != null) {
+                                    tableWrapper = titleElement.nextElementSibling();
+                                    if (tableWrapper != null && tableWrapper.is("div")) {
+                                        table = tableWrapper.selectFirst("table");
+                                    }
                                 }
                             }
+
+                            if (table != null) {
+                                Elements rows = table.select("tbody tr");
+                                // Jsoup tự động thấy rows.isEmpty() nếu không có data.
+                                if (rows.isEmpty()) {
+                                    System.out.println("   [PARSE] NOTE: Found title for " + methodName + " but no data rows extracted.");
+                                }
+
+                                for (Element row : rows) {
+                                    Elements cols = row.select("td");
+                                    if (cols.size() >= 5) {
+                                        String notes = (cols.size() >= 6) ? cols.get(5).text().trim() : "";
+                                        // BenchmarkRawData benchmarkRawData = BenchmarkRawData.builder()
+                                        //         .majorCode(cols.get(1).text().trim())
+                                        //         .majorName(cols.get(2).text().trim())
+                                        //         .subjectCombinations(cols.get(3).text().trim())
+                                        //         .score(cols.get(4).text().trim())
+                                        //         .notes(notes)
+                                        //         .build();
+                                        // admissionInfoRawData.getBenchmarks().add(benchmarkRawData);
+
+
+                                        BenchmarkRawData benchmarkRawData = new BenchmarkRawData();
+                                        benchmarkRawData.setMajorCode(cols.get(1).text().trim());
+                                        benchmarkRawData.setMajorName(cols.get(2).text().trim());
+                                        benchmarkRawData.setSubjectCombinations(cols.get(3).text().trim());
+                                        benchmarkRawData.setScore(cols.get(4).text().trim());
+                                        benchmarkRawData.setNotes(notes);
+                                        admissionInfoRawData.getBenchmarks().add(benchmarkRawData);
+                                    }
+                                }
+                            }
+
+                            if (!admissionInfoRawData.getBenchmarks().isEmpty()) {
+                                universityRawData.getAdmissions().add(admissionInfoRawData);
+                            }
                         }
-                        universityRawData.getAdmissions().add(admissionInfoRawData);
                     }
+                    // HẾT GIAI ĐOẠN 2
 
                     long end = System.currentTimeMillis();
                     System.out.printf("⏰ Crawl time for this university: %.2f seconds%n", (end - start) / 1000.0);
@@ -154,89 +275,27 @@ public class CrawlService {
                     System.err.println("ERROR: Timed out waiting for page content to load for " + university.getUniversityName() + ". Skipping.");
                 } catch (Exception e) {
                     System.err.println("ERROR: An unexpected error occurred while crawling " + university.getUniversityName() + ": " + e.getMessage());
-                    // Optionally print stack trace for debugging: e.printStackTrace();
+                    e.printStackTrace();
                 }
                 int delay = ThreadLocalRandom.current().nextInt(500, 1000);
                 Thread.sleep(delay);
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        } catch (NumberFormatException e) {
+            System.err.println("FATAL ERROR: Invalid year format provided: " + year);
             throw new RuntimeException(e);
         } finally {
             driver.quit();
         }
 
-        csvExportService.exportToCsv(universityRawDataList, "E:/benchmarks.csv");
+        csvExportService.exportToCsv(universityRawDataList, "E:/benchmarks_" + year + ".csv");
 
         return universityRawDataList;
     }
 
 
-    //    @PreAuthorize("hasRole('ADMIN')")
-//    public List<MajorGroupRawData> crawlMajorGroups() {
-//        List<MajorGroupRawData> groupList = new ArrayList<>();
-//        WebDriver driver = getWebDriver();
-//
-//        try {
-//            System.out.println("🌐 Navigating to: " + CRAWL_URL_MAJOR);
-//            driver.get(CRAWL_URL_MAJOR);
-//
-//            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
-//            wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector(".ant-collapse-item")));
-//
-//            // --- 1️⃣ MỞ TẤT CẢ NHÓM NGÀNH ---
-//            List<WebElement> headers = driver.findElements(By.cssSelector(".ant-collapse-item .ant-collapse-header"));
-//            System.out.println("🔍 Found " + headers.size() + " major groups.");
-//
-//            JavascriptExecutor js = (JavascriptExecutor) driver;
-//            for (WebElement header : headers) {
-//                try {
-//                    js.executeScript("arguments[0].scrollIntoView(true);", header);
-//                    Thread.sleep(200);
-//                    header.click();
-//                    Thread.sleep(300); // đợi nội dung render
-//                } catch (Exception ignored) {}
-//            }
-//
-//            // --- 2️⃣ LẤY LẠI HTML SAU KHI MỞ HẾT ---
-//            String fullHtml = driver.getPageSource();
-//            Document doc = Jsoup.parse(fullHtml);
-//            Elements groups = doc.select(".ant-collapse-item");
-//
-//            System.out.println("📦 Parsing " + groups.size() + " groups...");
-//
-//            // --- 3️⃣ PHÂN TÍCH NỘI DUNG ---
-//            for (Element group : groups) {
-//                try {
-//                    String groupName = group.selectFirst(".ant-collapse-header").text().trim();
-//                    Elements majorElements = group.select(".ant-collapse-content li, .ant-collapse-content a");
-//
-//                    List<String> majors = new ArrayList<>();
-//                    for (Element m : majorElements) {
-//                        String majorName = m.text().trim();
-//                        if (!majorName.isEmpty()) majors.add(majorName);
-//                    }
-//
-//                    int numberOfMajors = majors.size();
-//                    groupList.add(new MajorGroupRawData(groupName, numberOfMajors, majors));
-//
-//                    System.out.println("✅ " + groupName + " (" + numberOfMajors + " ngành)");
-//
-//                } catch (Exception e) {
-//                    System.err.println("⚠️ Error parsing group: " + e.getMessage());
-//                }
-//            }
-//
-//        } catch (Exception e) {
-//            System.err.println("❌ Failed to crawl majors: " + e.getMessage());
-//        } finally {
-//            driver.quit();
-//        }
-//
-//        csvExportService.exportMajorGroupsToCsv(groupList, "E:/major-groups.csv");
-//        System.out.println("📄 CSV exported to E:/major-groups.csv");
-//
-//        return groupList;
-//    }
     @PreAuthorize("hasRole('ADMIN')")
     public List<MajorGroupRawData> crawlMajorGroups() {
         List<MajorGroupRawData> majorGroupList = new ArrayList<>();
@@ -374,7 +433,6 @@ public class CrawlService {
         // Optional: Export to CSV if you have a similar service
         // csvExportService.exportMajorGroupsToCsv(majorGroupList, "E:/major_groups.csv");
         csvExportService.exportMajorGroupsToCsv(majorGroupList, "E:/major_groups.csv");
-
 
 
         return majorGroupList;

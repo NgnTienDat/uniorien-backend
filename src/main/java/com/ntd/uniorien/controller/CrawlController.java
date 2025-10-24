@@ -12,9 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,8 +34,10 @@ public class CrawlController {
     }
 
     @GetMapping("/benchmarks")
-    public ResponseEntity<ApiResponse<List<UniversityRawData>>> crawlBenchmarks() {
-        List<UniversityRawData> universityRawData = crawlService.crawlBenchmarks();
+    public ResponseEntity<ApiResponse<List<UniversityRawData>>> crawlBenchmarks(
+            @RequestParam(value = "year", defaultValue = "2025") String year
+    ) {
+        List<UniversityRawData> universityRawData = crawlService.crawlBenchmarks(year);
         return ResponseEntity.ok(ResponseUtils.ok(universityRawData));
     }
 

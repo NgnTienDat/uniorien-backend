@@ -22,7 +22,6 @@ public class CustomJwtDecoder implements JwtDecoder {
     @Value("${auth.signer-key}")
     private String signerKey;
 
-
     private final AuthenticationService authenticationService;
 
     private NimbusJwtDecoder nimbusJwtDecoder = null;
