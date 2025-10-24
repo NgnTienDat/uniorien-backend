@@ -75,6 +75,7 @@ public class UniversityService {
 
             admissionInformation.getBenchmarks().forEach(benchmark -> {
                 BenchmarkResponse benchmarkResponse = BenchmarkResponse.builder()
+                        .majorCode(benchmark.getMajor().getMajorCode())
                         .score(benchmark.getScore())
                         .major(benchmark.getMajor().getMajorName())
                         .subjectCombinations(benchmark.getSubjectCombinations())

@@ -12,6 +12,7 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MajorGroupResponse {
+    int id;
     String majorGroupName;
     int numberOfMajors;
     List<String> majors = new ArrayList<>();

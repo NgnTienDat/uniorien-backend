@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -133,9 +134,11 @@ public class MajorService {
                         )
                 ));
 
+        AtomicInteger counter = new AtomicInteger(1);
 
         return groupedMap.entrySet().stream()
                 .map(entry -> MajorGroupResponse.builder()
+                        .id(counter.getAndIncrement())
                         .majorGroupName(entry.getKey())
                         .majors(entry.getValue())
                         .numberOfMajors(entry.getValue().size())
