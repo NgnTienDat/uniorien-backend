@@ -8,7 +8,6 @@ public class ResponseUtils {
 
     public static <T> ApiResponse<T> buildResponse(T result, String message, HttpStatus status) {
         return ApiResponse.<T>builder()
-                .success(true)
                 .code(status.value())
                 .message(message)
                 .result(result)
@@ -25,7 +24,6 @@ public class ResponseUtils {
 
     public static <T> ApiResponse<T> error(String message, HttpStatus status) {
         return ApiResponse.<T>builder()
-                .success(false)
                 .code(status.value())
                 .message(message)
                 .build();
