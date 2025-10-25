@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -51,41 +52,62 @@ public class UniversityService {
         return universityRepository.findAllCodeAndName();
     }
 
-    public void deleteUniversities () {
+    public void deleteUniversities() {
         universityRepository.deleteAll();
     }
 
-    public UniversityResponse getAdmissionsByUniversityCode(String universityCode) {
+    public UniversityResponse getAdmissionsByUniversityCode(
+            String universityCode,
+            String year,
+            String admissionMethod
+    ) {
+        // ✅ 1. Xử lý year
+        int yearInt;
+        if (year == null || year.isEmpty()) {
+            yearInt = LocalDate.now().getYear();
+        } else {
+            try {
+                yearInt = Integer.parseInt(year);
+            } catch (NumberFormatException e) {
+                throw new AppException(ErrorCode.INVALID_YEAR_FORMAT);
+            }
+        }
+
+        // ✅ 2. Lấy dữ liệu University + Admission + Benchmark theo năm
         University university = universityRepository
-                .findByUniversityCode(universityCode.toUpperCase())
+                .findWithBenchmarksByYear(universityCode.toUpperCase(), yearInt)
                 .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
 
-        UniversityResponse universityResponse = UniversityResponse.builder()
+        List<AdmissionResponse> admissions = university.getAdmissionInformations().stream()
+                .filter(ai -> ai.getYearOfAdmission() == yearInt)
+                .filter(ai -> admissionMethod == null || admissionMethod.isEmpty()
+                        || ai.getAdmissionMethod().equalsIgnoreCase(admissionMethod))
+                .map(ai -> {
+                    List<BenchmarkResponse> benchmarks = ai.getBenchmarks().stream()
+                            .map(b -> BenchmarkResponse.builder()
+                                    .majorCode(b.getMajor().getMajorCode())
+                                    .major(b.getMajor().getMajorName())
+                                    .score(b.getScore())
+                                    .subjectCombinations(b.getSubjectCombinations())
+                                    .note(b.getNote())
+                                    .build())
+                            .toList();
+
+                    return AdmissionResponse.builder()
+                            .admissionMethod(ai.getAdmissionMethod())
+                            .admissionYear(String.valueOf(ai.getYearOfAdmission()))
+                            .benchmarkList(benchmarks)
+                            .build();
+                })
+                .toList();
+
+        return UniversityResponse.builder()
                 .universityCode(university.getUniversityCode())
                 .universityName(university.getUniversityName())
                 .website(university.getWebsite())
-                .admissionList(new ArrayList<>())
+                .admissionList(admissions)
                 .build();
-
-        university.getAdmissionInformations().forEach(admissionInformation -> {
-
-            AdmissionResponse admissionResponse = new AdmissionResponse();
-            admissionResponse.setAdmissionMethod(admissionInformation.getAdmissionMethod());
-            admissionResponse.setAdmissionYear(admissionInformation.getYearOfAdmission().toString());
-
-            admissionInformation.getBenchmarks().forEach(benchmark -> {
-                BenchmarkResponse benchmarkResponse = BenchmarkResponse.builder()
-                        .majorCode(benchmark.getMajor().getMajorCode())
-                        .score(benchmark.getScore())
-                        .major(benchmark.getMajor().getMajorName())
-                        .subjectCombinations(benchmark.getSubjectCombinations())
-                        .note(benchmark.getNote())
-                        .build();
-                admissionResponse.getBenchmarkList().add(benchmarkResponse);
-            });
-
-            universityResponse.getAdmissionList().add(admissionResponse);
-        });
-        return universityResponse;
     }
+
+
 }

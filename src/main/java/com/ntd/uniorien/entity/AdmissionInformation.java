@@ -21,7 +21,7 @@ public class AdmissionInformation {
     @Column(name = "id", nullable = false, length = 36)
     String id;
 
-    LocalDate yearOfAdmission;
+    int yearOfAdmission;
 
     String admissionMethod;
 

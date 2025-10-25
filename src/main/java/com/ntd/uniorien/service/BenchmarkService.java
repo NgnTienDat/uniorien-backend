@@ -101,7 +101,7 @@ public class BenchmarkService {
 
                 if (admissionInformation == null) {
                     admissionInformation = new AdmissionInformation();
-                    admissionInformation.setYearOfAdmission(LocalDate.of(yearInt, 1, 1));
+                    admissionInformation.setYearOfAdmission(yearInt);
                     admissionInformation.setAdmissionMethod(admissionMethod);
                     admissionInformation.setUniversity(university);
                     admissionInformation = admissionInfoRepository.save(admissionInformation);

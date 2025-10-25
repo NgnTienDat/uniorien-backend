@@ -22,7 +22,6 @@ public class GlobalExceptionHandler {
         log.info("Exception: ", exception);
 
         ApiResponse<?> apiResponse = new ApiResponse<>();
-        apiResponse.setSuccess(false);
         apiResponse.setCode(ErrorCode.UNCATEGORIZED_ERROR.getCode());
         apiResponse.setMessage(ErrorCode.UNCATEGORIZED_ERROR.getMessage());
 
@@ -38,7 +37,6 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
 
         ApiResponse<Void> apiResponse = new ApiResponse<>();
-        apiResponse.setSuccess(false);
         apiResponse.setCode(errorCode.getCode());
         apiResponse.setMessage(errorCode.getMessage());
 
@@ -52,7 +50,6 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
 
         ApiResponse<Void> apiResponse = new ApiResponse<>();
-        apiResponse.setSuccess(false);
         apiResponse.setCode(errorCode.getCode());
         apiResponse.setMessage(errorCode.getMessage());
 
@@ -79,7 +76,6 @@ public class GlobalExceptionHandler {
         }
 
         ApiResponse<Map<String, String>> response = new ApiResponse<>();
-        response.setSuccess(false);
         response.setCode(HttpStatus.BAD_REQUEST.value());
         response.setMessage("Validation Failed");
         response.setResult(errors);

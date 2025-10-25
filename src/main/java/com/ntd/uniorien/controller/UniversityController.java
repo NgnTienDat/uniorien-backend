@@ -60,10 +60,12 @@ public class UniversityController {
 
     @GetMapping("/benchmarks/{universityCode}")
     public ResponseEntity<ApiResponse<?>> getBenchmarksByUniversityCode(
-            @PathVariable(value = "universityCode") String universityCode) {
-
-
-        return ResponseEntity.ok(ResponseUtils.ok(universityService.getAdmissionsByUniversityCode(universityCode)));
+            @PathVariable(value = "universityCode") String universityCode,
+            @RequestParam(value = "year", required = false) String year,
+            @RequestParam(value = "admissionMethod", required = false) String admissionMethod
+    ) {
+        return ResponseEntity.ok(ResponseUtils.ok(universityService
+                .getAdmissionsByUniversityCode(universityCode, year, admissionMethod)));
     }
 
 }

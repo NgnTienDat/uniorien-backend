@@ -14,9 +14,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class Role {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
-
+    @Column(nullable = false, unique = true)
     String roleName;
 
     String description;
