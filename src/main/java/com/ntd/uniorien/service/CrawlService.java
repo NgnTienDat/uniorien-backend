@@ -210,7 +210,7 @@ public class CrawlService {
                             System.out.println("   [PARSE] Processing data block: " + methodName);
 
                             AdmissionInfoRawData admissionInfoRawData = new AdmissionInfoRawData();
-                            admissionInfoRawData.setAdmissionMethod(methodName);
+                            admissionInfoRawData.setAdmissionMethod(methodName.substring(0, methodName.indexOf("năm")).trim());
                             admissionInfoRawData.setYear(yearOfAdmission);
 
                             Element tableWrapper = titleElement.nextElementSibling();

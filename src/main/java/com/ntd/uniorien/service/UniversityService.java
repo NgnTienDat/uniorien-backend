@@ -52,6 +52,7 @@ public class UniversityService {
         return universityRepository.findAllCodeAndName();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteUniversities() {
         universityRepository.deleteAll();
     }
@@ -61,7 +62,6 @@ public class UniversityService {
             String year,
             String admissionMethod
     ) {
-        // ✅ 1. Xử lý year
         int yearInt;
         if (year == null || year.isEmpty()) {
             yearInt = LocalDate.now().getYear();
@@ -73,9 +73,8 @@ public class UniversityService {
             }
         }
 
-        // ✅ 2. Lấy dữ liệu University + Admission + Benchmark theo năm
         University university = universityRepository
-                .findWithBenchmarksByYear(universityCode.toUpperCase(), yearInt)
+                .findWithBenchmarks(universityCode.toUpperCase())
                 .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
 
         List<AdmissionResponse> admissions = university.getAdmissionInformations().stream()

@@ -1,5 +1,8 @@
 package com.ntd.uniorien.service;
 
+import com.ntd.uniorien.dto.response.MajorDetailResponse;
+import com.ntd.uniorien.dto.response.MajorFilterResponse;
+import com.ntd.uniorien.dto.response.ScoreByYearResponse;
 import com.ntd.uniorien.entity.*;
 import com.ntd.uniorien.repository.*;
 import lombok.AccessLevel;
@@ -11,10 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,65 @@ public class BenchmarkService {
     BenchmarkRepository benchmarkRepository;
     MajorRepository majorRepository;
 
+    public List<MajorFilterResponse> getMajorsByMajorGroup(String majorSearch,
+                                                           String admissionSearch,
+                                                           String location) {
+        List<Benchmark> benchmarks = benchmarkRepository
+                .searchBenchmarks(majorSearch, admissionSearch, location);
+
+        if (benchmarks.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<String, List<Benchmark>> groupedByUniversity = benchmarks.stream()
+                .collect(Collectors.groupingBy(b -> b.getUniversity().getUniversityName()));
+
+        List<MajorFilterResponse> responseList = new ArrayList<>();
+
+        for (Map.Entry<String, List<Benchmark>> entry : groupedByUniversity.entrySet()) {
+            String universityName = entry.getKey();
+            List<Benchmark> universityBenchmarks = entry.getValue();
+
+            Map<String, List<Benchmark>> groupedByMajor = universityBenchmarks.stream()
+                    .collect(Collectors.groupingBy(b -> b.getMajor().getMajorName()));
+
+            List<MajorDetailResponse> majorDetailResponses = new ArrayList<>();
+
+            for (Map.Entry<String, List<Benchmark>> majorEntry : groupedByMajor.entrySet()) {
+                String majorName = majorEntry.getKey();
+                List<Benchmark> majorBenchmarks = majorEntry.getValue();
+
+                majorBenchmarks.sort(Comparator.comparingInt(
+                        b -> -b.getAdmissionInformation().getYearOfAdmission()
+                ));
+
+                List<ScoreByYearResponse> scores = majorBenchmarks.stream()
+                        .sorted(Comparator.comparingInt(b -> -b.getAdmissionInformation().getYearOfAdmission()))
+                        .map(b -> new ScoreByYearResponse(
+                                b.getAdmissionInformation().getYearOfAdmission(),
+                                b.getScore(),
+                                b.getSubjectCombinations()
+                        ))
+                        .toList();
+
+                String subjectCombinations = majorBenchmarks.get(0).getSubjectCombinations();
+
+                majorDetailResponses.add(MajorDetailResponse.builder()
+                        .majorName(majorName)
+                        .subjectCombinations(subjectCombinations)
+                        .scores(scores)
+                        .build());
+            }
+
+            responseList.add(MajorFilterResponse.builder()
+                    .universityName(universityName)
+                    .majorDetails(majorDetailResponses)
+                    .build());
+        }
+
+        return responseList;
+    }
+
 
     public void handleSaveBenchmarkFromFileCSV(MultipartFile file) {
 
@@ -37,15 +97,12 @@ public class BenchmarkService {
                 new InputStreamReader(file.getInputStream(),
                         StandardCharsets.UTF_8))) {
 
-
-            // Bỏ dòng header
             String header = reader.readLine();
             if (header == null) {
                 log.warn("Empty CSV file!");
                 return;
             }
 
-            // Dùng cache để giảm truy vấn DB lặp lại
             Map<String, University> universityCache = universityRepository.findAll().stream()
                     .collect(Collectors.toMap(University::getUniversityCode, u -> u));
 
@@ -61,7 +118,7 @@ public class BenchmarkService {
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty()) continue;
 
-                String[] cols = line.split(",", -1); // Giữ cả cột rỗng
+                String[] cols = line.split(",", -1);
                 if (cols.length < 9) {
                     log.warn("Invalid row skipped: {}", line);
                     continue;
@@ -79,14 +136,12 @@ public class BenchmarkService {
                 String scoreStr = cols[8].trim();
                 String note = cols.length > 9 ? cols[9].trim() : null;
 
-                // Check University
                 University university = universityCache.get(universityCode);
                 if (university == null) {
                     log.warn("University not found (skipped): {}", universityCode);
-                    continue; // bỏ qua trường không tồn tại
+                    continue;
                 }
 
-                // Parse năm
                 int yearInt = 0;
                 try {
                     yearInt = Integer.parseInt(yearStr);
@@ -95,7 +150,6 @@ public class BenchmarkService {
                     continue;
                 }
 
-                // Tạo hoặc lấy AdmissionInformation
                 String admissionKey = university.getId() + "_" + yearInt + "_" + admissionMethod;
                 AdmissionInformation admissionInformation = admissionCache.get(admissionKey);
 
@@ -108,7 +162,6 @@ public class BenchmarkService {
                     admissionCache.put(admissionKey, admissionInformation);
                 }
 
-                // Major
                 Major major = majorCache.get(majorCode);
                 if (major == null) {
                     major = new Major();
@@ -118,7 +171,6 @@ public class BenchmarkService {
                     majorCache.put(majorCode, major);
                 }
 
-                // Parse điểm
                 float score = 0;
                 try {
                     if (!scoreStr.isEmpty()) score = Float.parseFloat(scoreStr);
@@ -126,7 +178,6 @@ public class BenchmarkService {
                     log.warn("Invalid score: {}", scoreStr);
                 }
 
-                // Tạo Benchmark
                 Benchmark benchmark = Benchmark.builder()
                         .score(score)
                         .note(note)

@@ -29,22 +29,18 @@ public interface UniversityRepository extends JpaRepository<University, String> 
             "FROM University u")
     List<UniversityResponse> findAllCodeAndName(Pageable pageable);
 
-    Optional<University> findByUniversityCode(String universityCode);
+//    Optional<University> findByUniversityCode(String universityCode);
 
     // Query đã JOIN FETCH benchmarks & major, không còn N+1 query
-        @Query("""
+    @Query("""
                 SELECT DISTINCT u
                 FROM University u
                 LEFT JOIN FETCH u.admissionInformations ai
                 LEFT JOIN FETCH ai.benchmarks b
                 LEFT JOIN FETCH b.major
                 WHERE u.universityCode = :code
-                  AND ai.yearOfAdmission = :year
             """)
-    Optional<University> findWithBenchmarksByYear(
-            @Param("code") String code,
-            @Param("year") Integer year
-    );
+    Optional<University> findWithBenchmarks(@Param("code") String code);
 
 
 }
