@@ -1,12 +1,11 @@
 package com.ntd.uniorien.controller;
 
-import com.ntd.uniorien.service.BenchmarkService;
-import com.ntd.uniorien.service.CrawlService;
-import com.ntd.uniorien.utils.raw.SchoolInfo;
 import com.ntd.uniorien.dto.response.ApiResponse;
 import com.ntd.uniorien.dto.response.UserResponse;
+import com.ntd.uniorien.service.BenchmarkService;
 import com.ntd.uniorien.service.UniversityService;
 import com.ntd.uniorien.utils.helper.ResponseUtils;
+import com.ntd.uniorien.utils.raw.SchoolInfo;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,10 +20,10 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/uni")
+@RequestMapping("/api/v1/admissions")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class UniversityController {
+public class AdmissionController {
 
     UniversityService universityService;
     BenchmarkService benchmarkService;
@@ -71,8 +70,5 @@ public class UniversityController {
         return ResponseEntity.ok(ResponseUtils.ok(universityService
                 .getAdmissionsByUniversityCode(universityCode, year, admissionMethod)));
     }
-
-
-
 
 }

@@ -27,6 +27,7 @@ import java.util.List;
 public class MajorController {
 
     MajorService majorService;
+    BenchmarkService benchmarkService;
 
     @PostMapping(value = "/save-majors-groups", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> uploadBenchmarks(@RequestParam("file") MultipartFile file) {
@@ -38,11 +39,20 @@ public class MajorController {
 
     @GetMapping("/major-groups")
     public ResponseEntity<ApiResponse<?>> getMajorGroups() {
-
-
-
         return ResponseEntity.status(HttpStatus.OK).body(ResponseUtils.ok(majorService.getAllMajorGroups()));
     }
+
+    @GetMapping("/filter")
+    public ResponseEntity<ApiResponse<?>> getMajorsByFilter(
+            @RequestParam String majorName,
+            @RequestParam String admissionMethod,
+            @RequestParam String location
+    ) {
+        return ResponseEntity.ok(
+                ResponseUtils.ok(benchmarkService.getMajorsByMajorGroup(majorName, admissionMethod, location))
+        );
+    }
+
 
 
 }

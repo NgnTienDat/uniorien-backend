@@ -146,4 +146,6 @@ public class MajorService {
                 .collect(Collectors.toList());
     }
 
+
+
 }
