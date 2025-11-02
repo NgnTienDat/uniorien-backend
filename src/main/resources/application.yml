@@ -34,3 +34,12 @@ app:
   crawl:
     url-diem-chuan: "https://diemthi.tuyensinh247.com/diem-chuan.html"
     url-nganh-dao-tao: "https://diemthi.tuyensinh247.com/nganh-dao-tao.html"
+
+external:
+  api:
+    identity:
+      url: ${GOOGLE_TOKEN_URI}
+      user-url: ${GOOGLE_USER_URL}
+      client-id: ${GOOGLE_CLIENT_ID}
+      client-secret: ${GOOGLE_CLIENT_SECRET}
+      redirect-uri: ${GOOGLE_REDIRECT_URI}

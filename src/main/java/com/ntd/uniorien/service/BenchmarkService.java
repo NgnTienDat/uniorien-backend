@@ -34,6 +34,9 @@ public class BenchmarkService {
     public List<MajorFilterResponse> getMajorsByMajorGroup(String majorSearch,
                                                            String admissionSearch,
                                                            String location) {
+        if (location == null || location.isEmpty()) {
+            location = "";
+        }
         List<Benchmark> benchmarks = benchmarkRepository
                 .searchBenchmarks(majorSearch, admissionSearch, location);
 
