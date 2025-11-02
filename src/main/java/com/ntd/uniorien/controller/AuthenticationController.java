@@ -19,10 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 
@@ -72,5 +69,21 @@ public class AuthenticationController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(ResponseUtils.buildResponse(result, "Refresh token", HttpStatus.OK));
+    }
+
+    @PostMapping("/outbound/authentication")
+    public ResponseEntity<ApiResponse<AuthenticationResponse>> externalAuthenticate(
+            @RequestParam("code") String code
+    ){
+        var result = authenticationService.outboundAuthenticate(code);
+
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ResponseUtils.buildResponse(
+                        result,
+                        "Outbound authentication successful",
+                        HttpStatus.OK));
+
     }
 }

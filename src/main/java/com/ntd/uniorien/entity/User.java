@@ -26,7 +26,6 @@ public class User {
     @Column(nullable = false, unique = true)
     String email;
 
-    @Column(nullable = false)
     String password;
 
     String avatar;
@@ -37,7 +36,7 @@ public class User {
     @Column(name = "created_at")
     Instant createdAt;
 
-    @ManyToMany
+    @OneToMany
     Set<Role> roles;
 
     @ColumnDefault("true")

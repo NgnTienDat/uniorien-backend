@@ -46,7 +46,7 @@ public class MajorController {
     public ResponseEntity<ApiResponse<?>> getMajorsByFilter(
             @RequestParam String majorName,
             @RequestParam String admissionMethod,
-            @RequestParam String location
+            @RequestParam(required = false) String location
     ) {
         return ResponseEntity.ok(
                 ResponseUtils.ok(benchmarkService.getMajorsByMajorGroup(majorName, admissionMethod, location))

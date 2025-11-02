@@ -5,18 +5,20 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import com.ntd.uniorien.dto.request.AuthenticationRequest;
-import com.ntd.uniorien.dto.request.IntrospectRequest;
-import com.ntd.uniorien.dto.request.LogoutRequest;
-import com.ntd.uniorien.dto.request.RefreshRequest;
+import com.ntd.uniorien.constant.PredefinedRole;
+import com.ntd.uniorien.dto.request.*;
 import com.ntd.uniorien.dto.response.AuthenticationResponse;
 import com.ntd.uniorien.dto.response.IntrospectResponse;
 import com.ntd.uniorien.entity.InvalidatedToken;
+import com.ntd.uniorien.entity.Role;
 import com.ntd.uniorien.entity.User;
 import com.ntd.uniorien.enums.ErrorCode;
 import com.ntd.uniorien.exception.AppException;
 import com.ntd.uniorien.repository.InvalidatedTokenRepository;
+import com.ntd.uniorien.repository.RoleRepository;
 import com.ntd.uniorien.repository.UserRepository;
+import com.ntd.uniorien.repository.httpClient.OutboundIdentityClient;
+import com.ntd.uniorien.repository.httpClient.OutboundUserClient;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +37,7 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -44,7 +48,10 @@ import java.util.UUID;
 @Slf4j
 public class AuthenticationService {
     UserRepository userRepository;
+    RoleRepository roleRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
+    OutboundIdentityClient outboundIdentityClient;
+    OutboundUserClient outboundUserClient;
 
     @NonFinal
     @Value("${auth.signer-key}")
@@ -57,6 +64,21 @@ public class AuthenticationService {
     @NonFinal
     @Value("${auth.refreshable-duration}")
     protected long REFRESH_DURATION;
+
+    @NonFinal
+    @Value("${external.api.identity.client-id}")
+    protected String CLIENT_ID;
+
+    @NonFinal
+    @Value("${external.api.identity.client-secret}")
+    protected String CLIENT_SECRET;
+
+    @NonFinal
+    @Value("${external.api.identity.redirect-uri}")
+    protected String REDIRECT_URI;
+
+    @NonFinal
+    protected String GRANT_TYPE = "authorization_code";
 
     public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest) {
         User user = userRepository.findUserByEmail(authenticationRequest.getEmail())
@@ -74,6 +96,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .authenticated(true)
                 .token(token)
+                .username(user.getFullName())
                 .build();
     }
 
@@ -179,8 +202,51 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(newToken)
+                .username(user.getFullName())
                 .authenticated(true)
                 .build();
     }
+
+    @Transactional
+    public AuthenticationResponse outboundAuthenticate(String code) {
+        var response = outboundIdentityClient.exchangeToken(ExchangeTokenRequest.builder()
+                .code(code)
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .redirectUri(REDIRECT_URI)
+                .grantType(GRANT_TYPE)
+                .build());
+
+        var userInfo = outboundUserClient.getUserInfo("json", response.getAccessToken());
+
+        HashSet<Role> roles = new HashSet<>();
+        roleRepository.findRoleByRoleName(PredefinedRole.USER_ROLE).ifPresent(roles::add);
+
+//        HashSet<String> roles = new HashSet<>();
+//        roles.add(Role.USER.name());
+
+        User user = userRepository.findUserByEmail(userInfo.getEmail())
+                .orElseGet(() -> {
+                    try {
+                        User user1 = User.builder()
+                                .email(userInfo.getEmail())
+                                .fullName(userInfo.getName())
+                                .avatar(userInfo.getPicture())
+                                .roles(roles)
+                                .build();
+
+                        userRepository.save(user1);
+                        return user1;
+                    } catch (DataIntegrityViolationException ex) {
+
+                        return userRepository.findUserByEmail(userInfo.getEmail())
+                                .orElseThrow();
+                    }
+                });
+
+        String token = generateToken(user);
+        return AuthenticationResponse.builder().authenticated(true).token(token).username(user.getFullName()).build();
+    }
+
 
 }
