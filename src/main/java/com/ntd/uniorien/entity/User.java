@@ -1,6 +1,5 @@
 package com.ntd.uniorien.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -15,8 +14,8 @@ import java.util.Set;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -27,7 +26,6 @@ public class User {
     String email;
 
     String password;
-
     String avatar;
 
     @Column(name = "full_name")
@@ -36,16 +34,15 @@ public class User {
     @Column(name = "created_at")
     Instant createdAt;
 
-    @OneToMany
-    Set<Role> roles;
+    @ManyToOne(fetch = FetchType.EAGER) // Một user chỉ có 1 role
+    @JoinColumn(name = "role_id")       // Tên cột foreign key
+    Role role;
 
     @ColumnDefault("true")
     boolean active;
 
-
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     Set<Comment> comments;
-
 
     @PrePersist
     protected void onCreate() {

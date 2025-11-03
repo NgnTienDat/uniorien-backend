@@ -46,7 +46,7 @@ public class AdmissionController {
 
     @PostMapping(value = "/save-benchmarks", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> uploadBenchmarks(@RequestParam("file") MultipartFile file) {
-        benchmarkService.handleSaveBenchmarkFromFileCSV(file);
+        benchmarkService.handleSaveBenchmarkFromFileCSV_v2(file);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtils.created(null));
     }

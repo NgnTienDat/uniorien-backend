@@ -34,6 +34,12 @@ public class BenchmarkService {
     public List<MajorFilterResponse> getMajorsByMajorGroup(String majorSearch,
                                                            String admissionSearch,
                                                            String location) {
+
+        System.out.println("majorSearch: " + majorSearch);
+        System.out.println("admissionSearch: " + admissionSearch);
+        System.out.println("location: " + location);
+
+
         if (location == null || location.isEmpty()) {
             location = "";
         }
@@ -76,8 +82,10 @@ public class BenchmarkService {
                         .toList();
 
                 String subjectCombinations = majorBenchmarks.get(0).getSubjectCombinations();
+                String majorCode = majorBenchmarks.get(0).getMajor().getMajorCode();
 
                 majorDetailResponses.add(MajorDetailResponse.builder()
+                        .majorCode(majorCode)
                         .majorName(majorName)
                         .subjectCombinations(subjectCombinations)
                         .scores(scores)
@@ -93,12 +101,9 @@ public class BenchmarkService {
         return responseList;
     }
 
-
-    public void handleSaveBenchmarkFromFileCSV(MultipartFile file) {
-
+    public void handleSaveBenchmarkFromFileCSV_v2(MultipartFile file) {
         try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(file.getInputStream(),
-                        StandardCharsets.UTF_8))) {
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
 
             String header = reader.readLine();
             if (header == null) {
@@ -106,15 +111,13 @@ public class BenchmarkService {
                 return;
             }
 
+            // Cache dữ liệu sẵn có
             Map<String, University> universityCache = universityRepository.findAll().stream()
                     .collect(Collectors.toMap(University::getUniversityCode, u -> u));
 
-            Map<String, Major> majorCache = majorRepository.findAll().stream()
-                    .collect(Collectors.toMap(Major::getMajorCode, m -> m));
+            Map<String, Major> majorCache = new HashMap<>(); // đổi sang rỗng để tránh trùng key
 
             Map<String, AdmissionInformation> admissionCache = new HashMap<>();
-
-            System.out.println(universityCache);
 
             String line;
             int count = 0;
@@ -145,7 +148,7 @@ public class BenchmarkService {
                     continue;
                 }
 
-                int yearInt = 0;
+                int yearInt;
                 try {
                     yearInt = Integer.parseInt(yearStr);
                 } catch (NumberFormatException e) {
@@ -153,6 +156,7 @@ public class BenchmarkService {
                     continue;
                 }
 
+                // AdmissionInformation cache
                 String admissionKey = university.getId() + "_" + yearInt + "_" + admissionMethod;
                 AdmissionInformation admissionInformation = admissionCache.get(admissionKey);
 
@@ -165,13 +169,24 @@ public class BenchmarkService {
                     admissionCache.put(admissionKey, admissionInformation);
                 }
 
-                Major major = majorCache.get(majorCode);
+                // Major cache — key = majorCode + "_" + majorName
+                String majorKey = majorCode + "_" + majorName;
+                Major major = majorCache.get(majorKey);
+
                 if (major == null) {
-                    major = new Major();
-                    major.setMajorCode(majorCode);
-                    major.setMajorName(majorName);
-                    major = majorRepository.save(major);
-                    majorCache.put(majorCode, major);
+                    Optional<Major> existingMajor = majorRepository.findByMajorCodeAndMajorName(majorCode, majorName);
+
+                    if (existingMajor.isPresent()) {
+                        major = existingMajor.get();
+                    } else {
+                        major = Major.builder()
+                                .majorCode(majorCode)
+                                .majorName(majorName)
+                                .build();
+                        major = majorRepository.save(major);
+                    }
+
+                    majorCache.put(majorKey, major);
                 }
 
                 float score = 0;
@@ -194,10 +209,118 @@ public class BenchmarkService {
                 count++;
             }
 
-            log.info("Import completed: {} benchmarks saved.", count);
+            log.info("✅ Import completed: {} benchmarks saved.", count);
 
         } catch (Exception e) {
-            log.error("Error while reading CSV file: ", e);
+            log.error("❌ Error while reading CSV file: ", e);
         }
     }
+
+
+//    public void handleSaveBenchmarkFromFileCSV(MultipartFile file) {
+//
+//        try (BufferedReader reader = new BufferedReader(
+//                new InputStreamReader(file.getInputStream(),
+//                        StandardCharsets.UTF_8))) {
+//
+//            String header = reader.readLine();
+//            if (header == null) {
+//                log.warn("Empty CSV file!");
+//                return;
+//            }
+//
+//            Map<String, University> universityCache = universityRepository.findAll().stream()
+//                    .collect(Collectors.toMap(University::getUniversityCode, u -> u));
+//
+//            Map<String, Major> majorCache = majorRepository.findAll().stream()
+//                    .collect(Collectors.toMap(Major::getMajorCode, m -> m));
+//
+//            Map<String, AdmissionInformation> admissionCache = new HashMap<>();
+//
+//            System.out.println(universityCache);
+//
+//            String line;
+//            int count = 0;
+//            while ((line = reader.readLine()) != null) {
+//                if (line.trim().isEmpty()) continue;
+//
+//                String[] cols = line.split(",", -1);
+//                if (cols.length < 9) {
+//                    log.warn("Invalid row skipped: {}", line);
+//                    continue;
+//                }
+//
+//                // Parse dữ liệu
+//                String universityCode = cols[0].trim();
+//                String universityName = cols[1].trim();
+//                String website = cols[2].trim();
+//                String yearStr = cols[3].trim();
+//                String admissionMethod = cols[4].trim();
+//                String majorCode = cols[5].trim();
+//                String majorName = cols[6].trim();
+//                String subjectCombinations = cols[7].trim();
+//                String scoreStr = cols[8].trim();
+//                String note = cols.length > 9 ? cols[9].trim() : null;
+//
+//                University university = universityCache.get(universityCode);
+//                if (university == null) {
+//                    log.warn("University not found (skipped): {}", universityCode);
+//                    continue;
+//                }
+//
+//                int yearInt = 0;
+//                try {
+//                    yearInt = Integer.parseInt(yearStr);
+//                } catch (NumberFormatException e) {
+//                    log.warn("Invalid year: {}", yearStr);
+//                    continue;
+//                }
+//
+//                String admissionKey = university.getId() + "_" + yearInt + "_" + admissionMethod;
+//                AdmissionInformation admissionInformation = admissionCache.get(admissionKey);
+//
+//                if (admissionInformation == null) {
+//                    admissionInformation = new AdmissionInformation();
+//                    admissionInformation.setYearOfAdmission(yearInt);
+//                    admissionInformation.setAdmissionMethod(admissionMethod);
+//                    admissionInformation.setUniversity(university);
+//                    admissionInformation = admissionInfoRepository.save(admissionInformation);
+//                    admissionCache.put(admissionKey, admissionInformation);
+//                }
+//
+//                Major major = majorCache.get(majorCode);
+//                if (major == null) {
+//                    major = new Major();
+//                    major.setMajorCode(majorCode);
+//                    major.setMajorName(majorName);
+//                    major = majorRepository.save(major);
+//                    majorCache.put(majorCode, major);
+//                }
+//
+//                float score = 0;
+//                try {
+//                    if (!scoreStr.isEmpty()) score = Float.parseFloat(scoreStr);
+//                } catch (NumberFormatException e) {
+//                    log.warn("Invalid score: {}", scoreStr);
+//                }
+//
+//                Benchmark benchmark = Benchmark.builder()
+//                        .score(score)
+//                        .note(note)
+//                        .subjectCombinations(subjectCombinations)
+//                        .major(major)
+//                        .university(university)
+//                        .admissionInformation(admissionInformation)
+//                        .build();
+//
+//                benchmarkRepository.save(benchmark);
+//                count++;
+//            }
+//
+//            log.info("Import completed: {} benchmarks saved.", count);
+//
+//        } catch (Exception e) {
+//            log.error("Error while reading CSV file: ", e);
+//        }
+//    }
 }
