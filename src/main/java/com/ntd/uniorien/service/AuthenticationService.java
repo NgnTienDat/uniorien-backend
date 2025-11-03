@@ -19,6 +19,7 @@ import com.ntd.uniorien.repository.RoleRepository;
 import com.ntd.uniorien.repository.UserRepository;
 import com.ntd.uniorien.repository.httpClient.OutboundIdentityClient;
 import com.ntd.uniorien.repository.httpClient.OutboundUserClient;
+import com.ntd.uniorien.utils.mapper.UserMapper;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -36,10 +37,7 @@ import org.springframework.util.CollectionUtils;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional
@@ -52,6 +50,8 @@ public class AuthenticationService {
     InvalidatedTokenRepository invalidatedTokenRepository;
     OutboundIdentityClient outboundIdentityClient;
     OutboundUserClient outboundUserClient;
+
+    UserMapper userMapper;
 
     @NonFinal
     @Value("${auth.signer-key}")
@@ -96,7 +96,7 @@ public class AuthenticationService {
         return AuthenticationResponse.builder()
                 .authenticated(true)
                 .token(token)
-                .username(user.getFullName())
+                .user(userMapper.toUserResponse(user))
                 .build();
     }
 
@@ -150,11 +150,9 @@ public class AuthenticationService {
     }
 
     private String buildScope(User user) {
-        StringJoiner stringJoiner = new StringJoiner(" ");
-        if (!CollectionUtils.isEmpty(user.getRoles())) {
-            user.getRoles().forEach(role -> stringJoiner.add("ROLE_" + role.getRoleName()));
-        }
-        return stringJoiner.toString();
+        return Optional.ofNullable(user.getRole())
+                .map(role -> "ROLE_" + role.getRoleName())
+                .orElse("");
     }
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws ParseException, JOSEException {
@@ -202,7 +200,7 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(newToken)
-                .username(user.getFullName())
+                .user(userMapper.toUserResponse(user))
                 .authenticated(true)
                 .build();
     }
@@ -219,11 +217,8 @@ public class AuthenticationService {
 
         var userInfo = outboundUserClient.getUserInfo("json", response.getAccessToken());
 
-        HashSet<Role> roles = new HashSet<>();
-        roleRepository.findRoleByRoleName(PredefinedRole.USER_ROLE).ifPresent(roles::add);
-
-//        HashSet<String> roles = new HashSet<>();
-//        roles.add(Role.USER.name());
+        Role userRole = roleRepository.findRoleByRoleName(PredefinedRole.USER_ROLE)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
         User user = userRepository.findUserByEmail(userInfo.getEmail())
                 .orElseGet(() -> {
@@ -232,7 +227,7 @@ public class AuthenticationService {
                                 .email(userInfo.getEmail())
                                 .fullName(userInfo.getName())
                                 .avatar(userInfo.getPicture())
-                                .roles(roles)
+                                .role(userRole)
                                 .build();
 
                         userRepository.save(user1);
@@ -245,7 +240,11 @@ public class AuthenticationService {
                 });
 
         String token = generateToken(user);
-        return AuthenticationResponse.builder().authenticated(true).token(token).username(user.getFullName()).build();
+        return AuthenticationResponse.builder()
+                .authenticated(true)
+                .token(token)
+                .user(userMapper.toUserResponse(user))
+                .build();
     }
 
 

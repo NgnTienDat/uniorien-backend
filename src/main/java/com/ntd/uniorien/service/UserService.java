@@ -39,14 +39,16 @@ public class UserService {
         }
 
         User user = userMapper.toUser(userCreation);
-        HashSet<Role> roles = new HashSet<>();
-        roleRepository.findRoleByRoleName(PredefinedRole.USER_ROLE).ifPresent(roles::add);
-        user.setRoles(roles);
 
+        Role userRole = roleRepository.findRoleByRoleName(PredefinedRole.USER_ROLE)
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+
+        user.setRole(userRole);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         userRepository.save(user);
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponse> getAllUsers() {

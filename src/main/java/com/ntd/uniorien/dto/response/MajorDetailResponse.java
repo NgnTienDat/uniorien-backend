@@ -13,6 +13,7 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class MajorDetailResponse {
+    String majorCode;
     String majorName;
     String subjectCombinations;
     List<ScoreByYearResponse> scores;

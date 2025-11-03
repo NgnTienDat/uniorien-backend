@@ -7,12 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MajorRepository extends JpaRepository<Major, String> {
     @Query("SELECT m.majorCode FROM Major m")
     List<String> findAllCodes();
 
+    Optional<Major> findByMajorCodeAndMajorName(String majorCode, String majorName);
 
 
 

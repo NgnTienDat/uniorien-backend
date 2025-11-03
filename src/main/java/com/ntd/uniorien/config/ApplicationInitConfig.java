@@ -51,12 +51,9 @@ public class ApplicationInitConfig {
                         .description("Admin role")
                         .build());
 
-                // create admin user
-                var roles = new HashSet<Role>();
-                roles.add(adminRole);
 
                 User admin = User.builder()
-                        .roles(roles)
+                        .role(adminRole)
                         .email(adminEmail)
                         .fullName("System Admin")
                         .password(passwordEncoder.encode(adminPassword))
