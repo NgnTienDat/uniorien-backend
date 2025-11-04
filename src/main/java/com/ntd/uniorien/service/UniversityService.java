@@ -3,8 +3,10 @@ package com.ntd.uniorien.service;
 import com.ntd.uniorien.dto.response.AdmissionResponse;
 import com.ntd.uniorien.dto.response.BenchmarkResponse;
 import com.ntd.uniorien.dto.response.UniversityResponse;
+import com.ntd.uniorien.dto.response.UniversityReviewResponse;
 import com.ntd.uniorien.enums.ErrorCode;
 import com.ntd.uniorien.exception.AppException;
+import com.ntd.uniorien.utils.mapper.UniversityMapper;
 import com.ntd.uniorien.utils.raw.SchoolInfo;
 import com.ntd.uniorien.entity.University;
 import com.ntd.uniorien.repository.UniversityRepository;
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -29,6 +32,7 @@ import java.util.Set;
 @Slf4j
 public class UniversityService {
     UniversityRepository universityRepository;
+    UniversityMapper universityMapper;
 
     @PreAuthorize("hasRole('ADMIN')")
     public void saveUniversities(List<SchoolInfo> schools) {
@@ -51,6 +55,7 @@ public class UniversityService {
     public List<UniversityResponse> getAllUniversities() {
         return universityRepository.findAllCodeAndName();
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUniversities() {
