@@ -32,6 +32,8 @@ public class University {
 
     String website;
 
+    String description;
+
     @ColumnDefault("true")
     boolean active;
 
