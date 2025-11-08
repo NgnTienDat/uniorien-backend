@@ -1,5 +1,6 @@
 package com.ntd.uniorien.controller;
 
+import com.ntd.uniorien.dto.request.UniversityDetailCreationRequest;
 import com.ntd.uniorien.service.BenchmarkService;
 import com.ntd.uniorien.service.CrawlService;
 import com.ntd.uniorien.utils.raw.SchoolInfo;
@@ -7,6 +8,7 @@ import com.ntd.uniorien.dto.response.ApiResponse;
 import com.ntd.uniorien.dto.response.UserResponse;
 import com.ntd.uniorien.service.UniversityService;
 import com.ntd.uniorien.utils.helper.ResponseUtils;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -38,7 +40,7 @@ public class UniversityController {
 
 
     @PostMapping("/save-list")
-    public ResponseEntity<ApiResponse<UserResponse>> createUniversities(@RequestBody List<SchoolInfo> schoolInfoList) {
+    public ResponseEntity<ApiResponse<?>> createUniversities(@RequestBody List<SchoolInfo> schoolInfoList) {
         universityService.saveUniversities(schoolInfoList);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ResponseUtils.created(null));
@@ -72,7 +74,12 @@ public class UniversityController {
                 .getAdmissionsByUniversityCode(universityCode, year, admissionMethod)));
     }
 
-
+    @PostMapping("/detail-info")
+    public ResponseEntity<ApiResponse<?>> addUniversityInformation(
+            @RequestBody @Valid UniversityDetailCreationRequest universityDetailCreationRequest) {
+        universityService.createUniversityDetailInfo(universityDetailCreationRequest);
+        return ResponseEntity.ok(ResponseUtils.created(null));
+    }
 
 
 }
