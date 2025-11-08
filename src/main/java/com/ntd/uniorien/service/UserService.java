@@ -14,6 +14,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,4 +56,27 @@ public class UserService {
         List<User> users = userRepository.findAll();
         return users.stream().map(userMapper::toUserResponse).toList();
     }
+
+    public UserResponse getMyInfo() {
+        var context = SecurityContextHolder.getContext();
+        String email = context.getAuthentication().getName();
+        User user = userRepository.findUserByEmail(email).orElseThrow(
+                () -> new AppException(ErrorCode.USER_NOTFOUND)
+        );
+        return userMapper.toUserResponse(user);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponse getUserById(String id) {
+        return userMapper.toUserResponse(userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND)));
+    }
+
+
+    @PreAuthorize("hasRole('ADMIN')")
+    public void deleteUser(String id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOTFOUND));
+        userRepository.deleteById(id);
+    }
+
 }

@@ -43,4 +43,6 @@ public interface UniversityRepository extends JpaRepository<University, String> 
     Optional<University> findWithBenchmarks(@Param("code") String code);
 
 
+    Optional<University> findByUniversityCode(String universityCode);
+
 }

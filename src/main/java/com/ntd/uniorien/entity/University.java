@@ -45,6 +45,9 @@ public class University {
     @Column(name = "created_at")
     Instant createdAt;
 
+    @OneToOne(mappedBy = "university", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    UniversityInformation universityInformation;
+
     @OneToMany(mappedBy = "university", cascade = CascadeType.ALL , fetch = FetchType.LAZY, orphanRemoval = true)
     Set<AdmissionInformation> admissionInformations;
 

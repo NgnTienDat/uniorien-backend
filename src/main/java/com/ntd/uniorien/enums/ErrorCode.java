@@ -22,6 +22,7 @@ public enum ErrorCode {
     MAJOR_GROUP_EMPTY(1008, "Major groups data is empty", HttpStatus.NOT_FOUND),
     INVALID_YEAR_FORMAT(1009, "Invalid year", HttpStatus.BAD_REQUEST),
     ROLE_NOT_FOUND(1010, "Role not found", HttpStatus.NOT_FOUND),
+    COMMENT_NOT_FOUND(1011, "Comment not found", HttpStatus.NOT_FOUND),
 
     // Validation: 2XXX
     INVALID_MESSAGE_KEY(2001, "Invalid Message Key", HttpStatus.BAD_REQUEST),

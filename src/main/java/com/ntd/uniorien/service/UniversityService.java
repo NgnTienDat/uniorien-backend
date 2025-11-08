@@ -1,11 +1,13 @@
 package com.ntd.uniorien.service;
 
+import com.ntd.uniorien.dto.request.UniversityDetailCreationRequest;
 import com.ntd.uniorien.dto.response.AdmissionResponse;
 import com.ntd.uniorien.dto.response.BenchmarkResponse;
 import com.ntd.uniorien.dto.response.UniversityResponse;
-import com.ntd.uniorien.dto.response.UniversityReviewResponse;
+import com.ntd.uniorien.entity.UniversityInformation;
 import com.ntd.uniorien.enums.ErrorCode;
 import com.ntd.uniorien.exception.AppException;
+import com.ntd.uniorien.repository.UniversityInformationRepository;
 import com.ntd.uniorien.utils.mapper.UniversityMapper;
 import com.ntd.uniorien.utils.raw.SchoolInfo;
 import com.ntd.uniorien.entity.University;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 public class UniversityService {
     UniversityRepository universityRepository;
     UniversityMapper universityMapper;
+    UniversityInformationRepository universityInformationRepository;
 
     @PreAuthorize("hasRole('ADMIN')")
     public void saveUniversities(List<SchoolInfo> schools) {
@@ -113,5 +116,15 @@ public class UniversityService {
                 .build();
     }
 
+    public void createUniversityDetailInfo(UniversityDetailCreationRequest universityDetailCreationRequest) {
+        University university = universityRepository.findById(universityDetailCreationRequest.getUniversityId())
+                .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
+
+        UniversityInformation universityInformation =
+                universityMapper.toUniversityInformation(universityDetailCreationRequest);
+
+        universityInformation.setUniversity(university);
+        universityInformationRepository.save(universityInformation);
+    }
 
 }

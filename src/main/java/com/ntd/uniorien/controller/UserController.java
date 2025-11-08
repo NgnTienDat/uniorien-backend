@@ -42,5 +42,20 @@ public class UserController {
                 .body(ResponseUtils.created(null));
     }
 
+    @GetMapping("/{userId}")
+    public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable String userId) {
+        return ResponseEntity.ok(ResponseUtils.ok(userService.getUserById(userId)));
+    }
 
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable("userId") String userId) {
+        userService.deleteUser(userId);
+        return ResponseEntity.ok(ResponseUtils.ok(null));
+
+    }
+
+    @GetMapping("/my-info")
+    public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
+        return ResponseEntity.ok(ResponseUtils.ok(userService.getMyInfo()));
+    }
 }
