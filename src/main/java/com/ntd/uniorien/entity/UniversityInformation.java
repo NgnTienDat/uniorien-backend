@@ -28,9 +28,20 @@ public class UniversityInformation {
 
     String websiteAddress;
 
-    String about;
+    float rating;
+
+    int students;
+
+    String founded;
+
+    String institutionType; // loại hình: Công lập / tư thục / Quốc tế...
+
+    String programsOffered; // Đào tạo: Đa ngành / Kỹ thuật / Kinh tế...e
 
     String logo;
+
+    @Column(columnDefinition = "TEXT")
+    private String about;
 
     @Column(name = "created_at")
     Instant createdAt;

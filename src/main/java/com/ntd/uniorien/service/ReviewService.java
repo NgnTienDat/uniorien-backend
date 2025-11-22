@@ -2,6 +2,7 @@ package com.ntd.uniorien.service;
 
 import com.ntd.uniorien.dto.request.CommentCreationRequest;
 import com.ntd.uniorien.dto.response.CommentResponse;
+import com.ntd.uniorien.dto.response.PageResponse;
 import com.ntd.uniorien.dto.response.UniversityDetailResponse;
 import com.ntd.uniorien.dto.response.UniversityReviewResponse;
 import com.ntd.uniorien.entity.Comment;
@@ -20,12 +21,17 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -39,6 +45,23 @@ public class ReviewService {
     UniversityInformationRepository universityInformationRepository;
     CommentMapper commentMapper;
     UniversityMapper universityMapper;
+
+    private PageResponse<CommentResponse> buildPageResponse(Page<Comment> commentPage) {
+        List<CommentResponse> content = commentPage.getContent().stream()
+                .map(commentMapper::toCommentResponse)
+                .collect(Collectors.toList());
+
+        return PageResponse.<CommentResponse>builder()
+                .content(content)
+                .pageNumber(commentPage.getNumber())
+                .pageSize(commentPage.getSize())
+                .totalElements(commentPage.getTotalElements())
+                .totalPages(commentPage.getTotalPages())
+                .first(commentPage.isFirst())
+                .last(commentPage.isLast())
+                .empty(commentPage.isEmpty())
+                .build();
+    }
 
 
     public List<UniversityReviewResponse> allUniversityReviews() {
@@ -65,15 +88,25 @@ public class ReviewService {
         commentRepository.save(comment);
     }
 
-    public List<CommentResponse> getAllComments(String universityCode) {
+//    public List<CommentResponse> getAllComments(String universityCode) {
+//        University university = universityRepository.findByUniversityCode(universityCode)
+//                .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
+//
+//        List<Comment> comments = commentRepository.findAllByUniversity(university);
+//        return comments.stream()
+//                .map(commentMapper::toCommentResponse)
+//                .toList();
+//    }
+    public PageResponse<CommentResponse> getAllComments(String universityCode, int page, int size) {
         University university = universityRepository.findByUniversityCode(universityCode)
                 .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
 
-        List<Comment> comments = commentRepository.findAllByUniversity(university);
-        return comments.stream()
-                .map(commentMapper::toCommentResponse)
-                .toList();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Comment> commentPage = commentRepository.findAllByUniversity(university, pageable);
+
+        return buildPageResponse(commentPage);
     }
+
 
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteComment(String commentId) {
@@ -94,4 +127,7 @@ public class ReviewService {
         return universityMapper.toUniversityDetailResponse(universityInformation);
 
     }
+
+
+
 }

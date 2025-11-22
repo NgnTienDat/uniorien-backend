@@ -14,6 +14,7 @@ public interface UniversityMapper {
 
     @Mapping(source = "universityInformation.name", target = "universityName")
     @Mapping(source = "universityInformation.university.universityCode", target = "universityCode")
+    @Mapping(source = "universityInformation.university.id", target = "universityId")
     UniversityDetailResponse toUniversityDetailResponse(UniversityInformation universityInformation);
 
     UniversityInformation toUniversityInformation(UniversityDetailCreationRequest universityDetailCreationRequest);
