@@ -58,7 +58,7 @@ public class CrawlService {
         int cnt = 0;
         List<UniversityRawData> universityRawDataList = new ArrayList<>();
         List<UniversityResponse> universityList = universityRepository
-                .findAllCodeAndName(PageRequest.of(0, 2));
+                .findAllCodeAndName(PageRequest.of(0, 10));
 
         WebDriver driver = getWebDriver();
 
