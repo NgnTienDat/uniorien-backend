@@ -26,13 +26,13 @@ public class UserController {
 
     UserService userService;
 
-
-
     @GetMapping("/")
 //    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers();
-        return ResponseEntity.ok(ResponseUtils.ok(users));
+    public ResponseEntity<ApiResponse<?>> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "3") int size
+    ) {
+        return ResponseEntity.ok(ResponseUtils.ok(userService.getAllUsers(page, size)));
     }
 
     @PostMapping("/new-user")
@@ -50,6 +50,19 @@ public class UserController {
     @DeleteMapping("/{userId}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable("userId") String userId) {
         userService.deleteUser(userId);
+        return ResponseEntity.ok(ResponseUtils.ok(null));
+
+    }
+
+    @PostMapping("/{userId}/lock")
+    public ResponseEntity<ApiResponse<Void>> lockUser(@PathVariable("userId") String userId) {
+        userService.lockUser(userId);
+        return ResponseEntity.ok(ResponseUtils.ok(null));
+    }
+
+    @PostMapping("/{userId}/unlock")
+    public ResponseEntity<ApiResponse<Void>> unlockUser(@PathVariable("userId") String userId) {
+        userService.unlockUser(userId);
         return ResponseEntity.ok(ResponseUtils.ok(null));
 
     }

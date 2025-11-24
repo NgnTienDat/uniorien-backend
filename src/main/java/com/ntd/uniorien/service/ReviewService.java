@@ -15,6 +15,7 @@ import com.ntd.uniorien.repository.CommentRepository;
 import com.ntd.uniorien.repository.UniversityInformationRepository;
 import com.ntd.uniorien.repository.UniversityRepository;
 import com.ntd.uniorien.repository.UserRepository;
+import com.ntd.uniorien.utils.helper.PageResponseUtil;
 import com.ntd.uniorien.utils.mapper.CommentMapper;
 import com.ntd.uniorien.utils.mapper.UniversityMapper;
 import lombok.AccessLevel;
@@ -46,23 +47,6 @@ public class ReviewService {
     CommentMapper commentMapper;
     UniversityMapper universityMapper;
 
-    private PageResponse<CommentResponse> buildPageResponse(Page<Comment> commentPage) {
-        List<CommentResponse> content = commentPage.getContent().stream()
-                .map(commentMapper::toCommentResponse)
-                .collect(Collectors.toList());
-
-        return PageResponse.<CommentResponse>builder()
-                .content(content)
-                .pageNumber(commentPage.getNumber())
-                .pageSize(commentPage.getSize())
-                .totalElements(commentPage.getTotalElements())
-                .totalPages(commentPage.getTotalPages())
-                .first(commentPage.isFirst())
-                .last(commentPage.isLast())
-                .empty(commentPage.isEmpty())
-                .build();
-    }
-
 
     public List<UniversityReviewResponse> allUniversityReviews() {
         List<University> universities = universityRepository.findAll();
@@ -88,15 +72,7 @@ public class ReviewService {
         commentRepository.save(comment);
     }
 
-//    public List<CommentResponse> getAllComments(String universityCode) {
-//        University university = universityRepository.findByUniversityCode(universityCode)
-//                .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
-//
-//        List<Comment> comments = commentRepository.findAllByUniversity(university);
-//        return comments.stream()
-//                .map(commentMapper::toCommentResponse)
-//                .toList();
-//    }
+
     public PageResponse<CommentResponse> getAllComments(String universityCode, int page, int size) {
         University university = universityRepository.findByUniversityCode(universityCode)
                 .orElseThrow(() -> new AppException(ErrorCode.UNIVERSITY_NOT_FOUND));
@@ -104,8 +80,9 @@ public class ReviewService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Comment> commentPage = commentRepository.findAllByUniversity(university, pageable);
 
-        return buildPageResponse(commentPage);
+        return PageResponseUtil.build(commentPage, commentMapper::toCommentResponse);
     }
+
 
 
     @PreAuthorize("hasRole('ADMIN')")
