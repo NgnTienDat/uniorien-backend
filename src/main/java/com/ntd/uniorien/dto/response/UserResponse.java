@@ -16,4 +16,6 @@ public class UserResponse {
     String email;
     String avatar;
     RoleResponse role;
+    boolean active;
+    String createdAt;
 }

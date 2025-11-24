@@ -41,7 +41,7 @@ public class User {
     @ColumnDefault("true")
     boolean active;
 
-    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     Set<Comment> comments;
 
     @PrePersist

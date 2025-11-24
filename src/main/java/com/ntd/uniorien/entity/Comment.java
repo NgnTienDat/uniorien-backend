@@ -4,6 +4,8 @@ package com.ntd.uniorien.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
 import java.util.Set;
@@ -32,13 +34,15 @@ public class Comment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")       // nullable = true
+    @OnDelete(action = OnDeleteAction.SET_NULL) // set null nếu user liên quan bị xóa
     Comment parent;
 
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     Set<Comment> replies;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")         // nullable = true
+    @OnDelete(action = OnDeleteAction.SET_NULL) // set null nếu user liên quan bị xóa
     User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
