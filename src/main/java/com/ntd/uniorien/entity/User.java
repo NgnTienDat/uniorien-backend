@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -35,7 +36,7 @@ public class User {
     Instant createdAt;
 
     @ManyToOne(fetch = FetchType.EAGER) // Một user chỉ có 1 role
-    @JoinColumn(name = "role_id")       // Tên cột foreign key
+    @JoinColumn(name = "role_id")
     Role role;
 
     @ColumnDefault("true")
@@ -43,6 +44,7 @@ public class User {
 
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     Set<Comment> comments;
+
 
     @PrePersist
     protected void onCreate() {
