@@ -41,7 +41,7 @@ public class UniversityInformation {
     String logo;
 
     @Column(columnDefinition = "TEXT")
-    private String about;
+    String about;
 
     @Column(name = "created_at")
     Instant createdAt;

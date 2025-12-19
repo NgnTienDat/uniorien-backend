@@ -1,0 +1,28 @@
+# IDE & System files
+.idea/
+*.iml
+uniorien-backend.iml
+.DS_Store
+Thumbs.db
+
+# Build tool folders
+target/
+.mvn/
+mvnw
+mvnw.cmd
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Config & Documentation
+.env
+HELP.md
+
+volumes/
