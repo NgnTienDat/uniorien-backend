@@ -33,7 +33,7 @@ public class UniversityController {
 
     @GetMapping("/health-check")
     public ResponseEntity<ApiResponse<?>> healthCheck() {
-        return ResponseEntity.ok(ResponseUtils.ok("Health check successful"));
+        return ResponseEntity.ok(ResponseUtils.ok("TEST CI/CD SUCCESS"));
     }
 
     @DeleteMapping("/delete-all")
