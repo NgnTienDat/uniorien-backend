@@ -26,6 +26,11 @@ public class UserController {
 
     UserService userService;
 
+    @GetMapping("/health-check")
+    public ResponseEntity<ApiResponse<?>> healthCheck() {
+        return ResponseEntity.ok(ResponseUtils.ok("Health check successful"));
+    }
+
     @GetMapping("/")
 //    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<?>> getAllUsers(
