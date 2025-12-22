@@ -31,6 +31,11 @@ public class UniversityController {
     UniversityService universityService;
     BenchmarkService benchmarkService;
 
+    @GetMapping("/health-check")
+    public ResponseEntity<ApiResponse<?>> healthCheck() {
+        return ResponseEntity.ok(ResponseUtils.ok("Health check successful"));
+    }
+
     @DeleteMapping("/delete-all")
     public ResponseEntity<ApiResponse<?>> deleteUniversities() {
         universityService.deleteUniversities();
