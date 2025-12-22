@@ -5,6 +5,7 @@ import com.ntd.uniorien.dto.request.IntrospectRequest;
 import com.ntd.uniorien.service.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
